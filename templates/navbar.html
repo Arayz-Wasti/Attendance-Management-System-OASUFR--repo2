@@ -1,0 +1,56 @@
+<header>
+    <nav class="navbar">
+        <!-- Logo -->
+        <a href="{% url 'dashboard' %}" class="navbar-logo">OASUFR</a>
+
+        <!-- Desktop Menu -->
+        <div class="navbar-menu">
+            <a href="http://127.0.0.1:8501/" target="_blank">Home</a>
+            <a href="{% url 'logs' %}">Logs</a>
+            <a href="{% url 'admins' %}" target="_blank">Admin Panel</a>
+            {% if not request.user.is_authenticated %}
+                <a href="{% url 'login' %}">Login</a>
+            {% endif %}
+            {% if request.user.is_authenticated %}
+                <span class="welcome-message">Hello, {{ request.user }}!</span>
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- Mobile Toggle Button -->
+        <div class="navbar-toggle" id="navbar-toggle">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="navbar-mobile-menu" id="navbar-mobile-menu">
+            <a href="http://127.0.0.1:8501/" target="_blank">Home</a>
+            <a href="{% url 'logs' %}">Logs</a>
+            <a href="{% url 'admins' %}" target="_blank">Admin Panel</a>
+            {% if not request.user.is_authenticated %}
+                <a href="{% url 'login' %}">Login</a>
+            {% endif %}
+            {% if request.user.is_authenticated %}
+                <span class="welcome-message">Hello, {{ request.user }}!</span>
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+
+<script>
+    const toggleButton = document.getElementById('navbar-toggle');
+    const mobileMenu = document.getElementById('navbar-mobile-menu');
+
+    toggleButton.addEventListener('click', () => {
+        mobileMenu.style.display = mobileMenu.style.display === 'flex' ? 'none' : 'flex';
+    });
+</script>

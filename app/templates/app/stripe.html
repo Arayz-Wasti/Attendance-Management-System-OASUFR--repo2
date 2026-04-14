@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fine Payment</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/cardpaymentstripeicon.ico' %}"/>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 60px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #4a47a3;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        #card-element {
+            width: 95%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #6e8efb;
+            outline: none;
+        }
+
+        #card-errors {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(90deg, #6e8efb, #a777e3);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #5c78d1, #9360d0);
+        }
+
+        .links {
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: #4a47a3;
+            transition: color 0.3s ease;
+        }
+
+        .links a:hover {
+            color: #6e8efb;
+        }
+
+        .success-message {
+            display: none;
+            color: #4caf50;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <b>
+                    <li>
+                        {{ message }}
+                    </li>
+                </b>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <h1>Pay Your Fine</h1>
+    <form id="payment-form" method="post" action="{% url 'stripe_payment' %}">
+        {% csrf_token %}
+        <!-- Fine Amount Input -->
+        <div class="form-group">
+            <label for="fine-amount">Fine Amount (USD):</label>
+            <input type="number" id="fine-amount" name="fine_amount" placeholder="Enter Fine Amount"
+                   value="{{ fine_amount }}" required readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="card-holder-name">Cardholder Name:</label>
+            <input type="text" id="card-holder-name" name="card_holder_name" placeholder="Enter your name" required>
+        </div>
+
+        <input type="hidden" id="payment-intent-id" name="payment_intent_id">
+        <input type="hidden" id="fine-id" name="fine_id" value="{{ fine_id }}">
+        <input type="hidden" id="search-query" name="search_query" value="{{ search_query }}">
+        <input type="hidden" id="date" name="date" value="{{ date }}">
+        <input type="hidden" id="allow_return" name="allow_return" value="{{ allow_return }}">
+
+        <!-- Stripe Card Element -->
+        <div class="form-group">
+            <label for="card-element">Card Details:</label>
+            <div id="card-element">
+                <!-- A Stripe Element will be inserted here. -->
+            </div>
+            <div id="card-errors" role="alert"></div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit">Pay Now</button>
+
+        <!-- Success Message -->
+        <div class="success-message" id="success-message">
+            Payment successful! Thank you for your payment.
+        </div>
+    </form>
+    <div class="links">
+        <center><a href="{{ request.META.HTTP_REFERER }}">Go back</a></center>
+    </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    var stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY }}');
+    var elements = stripe.elements();
+    var cardElement = elements.create('card', {
+        style: {
+            base: {
+                color: '#32325d',
+                fontFamily: 'Roboto, Arial, sans-serif',
+                fontSmoothing: 'antialiased',
+                fontSize: '16px',
+                '::placeholder': {
+                    color: '#aab7c4'
+                }
+            },
+            invalid: {
+                color: '#fa755a',
+                iconColor: '#fa755a'
+            }
+        }
+    });
+    cardElement.mount('#card-element');
+
+    var form = document.getElementById('payment-form');
+    var paymentIntentIdField = document.getElementById('payment-intent-id');
+    var successMessage = document.getElementById('success-message');
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        stripe.confirmCardPayment('{{ client_secret }}', {
+            payment_method: {
+                card: cardElement,
+                billing_details: {
+                    name: document.getElementById('card-holder-name').value
+                }
+            }
+        }).then(function (result) {
+            if (result.error) {
+                document.getElementById('card-errors').textContent = result.error.message;
+            } else {
+                paymentIntentIdField.value = result.paymentIntent.id;
+                successMessage.style.display = 'block';
+                form.submit();
+            }
+        });
+    });
+</script>
+</body>
+</html>

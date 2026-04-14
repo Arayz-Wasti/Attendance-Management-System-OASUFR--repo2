@@ -1,0 +1,473 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block content %}
+
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #0D47A1, #1976D2);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            width: 85%;
+            max-width: 1800px;
+            margin: 90px auto 0; /* Adds margin-top of 40px */
+            padding: 30px;
+            background: #fefefe;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Pop-up Modal Styling */
+        .popup-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 9999; /* Ensure it appears on top of everything */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .popup-modal.success {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+            color: #155724;
+        }
+
+        .popup-modal.error {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+
+        .popup-modal .popup-message {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .popup-modal .close-btn {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background-color: #1565C0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .popup-modal .close-btn:hover {
+            background-color: #1e88e5;
+        }
+
+        /* Fade in effect for the modal */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.8rem;
+            color: #0D47A1;
+            font-weight: bold;
+        }
+
+        /* Stats Section */
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 260px;
+            background: linear-gradient(to bottom right, #1976D2, #64B5F6);
+            padding: 12px;
+            text-align: center;
+            border-radius: 12px;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .stat-card p {
+            margin-top: 15px;
+            font-size: 2.4rem;
+            font-weight: bold;
+        }
+
+        /* Button */
+        .button-container {
+            display: flex;
+            justify-content: space-between; /* Space them out */
+            align-items: center; /* Center align vertically */
+            gap: 15px; /* Optional: Adds space between buttons */
+
+        }
+
+        .view-btn-left, .view-btn-right {
+            display: inline-block; /* Optional, in case needed */
+            width: auto; /* Allow the width to fit content */
+            margin: 0; /* Remove bottom margin */
+            background: linear-gradient(to right, #1565C0, #1E88E5);
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .view-btn-left:hover, .view-btn-right:hover {
+            background: linear-gradient(to right, #1E88E5, #42A5F5);
+            transform: scale(1.05);
+        }
+
+
+        /* Attendance Breakdown Section */
+        .attendance-breakdown {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .attendance-table {
+            flex: 1;
+            min-width: 300px;
+            max-width: 100%;
+            background: #E3F2FD;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 10px auto;
+            overflow-x: auto; /* Enable horizontal scrolling for overflow */
+        }
+
+        .attendance-table h2 {
+            font-size: 1.8rem;
+            color: #0D47A1;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        table, th, td {
+            border: 1px solid #90CAF9;
+        }
+
+        th {
+            background: #1976D2;
+            color: #fff;
+            font-size: 1rem;
+            padding: 12px;
+        }
+
+        td {
+            padding: 12px;
+            text-align: left;
+            background: #fff;
+        }
+
+        tr:hover td {
+            background: #E3F2FD;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .attendance-breakdown {
+                flex-direction: column; /* Stack tables vertically */
+                align-items: center;
+            }
+
+            .attendance-table {
+                padding: 15px;
+            }
+
+            table, th, td {
+                font-size: 0.9rem; /* Adjust font size for smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .attendance-table {
+                padding: 10px;
+            }
+
+            table {
+                font-size: 0.8rem; /* Further reduce font size for very small screens */
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        /* Pagination Styles */
+        .pagination {
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .pagination a {
+            margin: 0 5px;
+            padding: 5px 10px;
+            text-decoration: none;
+            color: #0D47A1;
+            border: 1px solid #0D47A1;
+            border-radius: 5px;
+            background: #E3F2FD;
+        }
+
+        .pagination a:hover {
+            background: #0D47A1;
+            color: #fff;
+        }
+
+        .pagination span {
+            margin: 0 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .stats, .attendance-breakdown {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stat-card, .attendance-table {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .attendance-table {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .attendance-table {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+
+
+        canvas {
+            width: 100% !important;
+            height: 350px !important;
+        }
+
+        h1 {
+            font-family: 'Arial', sans-serif;
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: linear-gradient(to right, #1565C0, #1E88E5);
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        /* Animation for fade-in effect */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+
+
+
+    <div class="container">
+        {% if messages %}
+            <div id="popup-modal" class="popup-modal">
+                {% for message in messages %}
+                    <div class="popup-message">{{ message }}</div>
+                {% endfor %}
+                <button class="close-btn" onclick="closePopup()">Close</button>
+            </div>
+        {% endif %}
+
+        <h1>{{ attendance_stats.role }} Name: &nbsp;&nbsp;{{ attendance_stats.name }}</h1>
+
+        <!-- Stats Overview -->
+        <div class="stats">
+            <div class="stat-card">
+                <h2>Total Present</h2>
+                <p>{{ attendance_stats.total_present }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Total Absent</h2>
+                <p>{{ attendance_stats.total_absent }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Total Fine</h2>
+                <p>{{ attendance_stats.total_fine }}</p>
+            </div>
+        </div>
+
+        <!-- Button to View joining date and status -->
+        <div class="button-container">
+            <a class="view-btn-left">Joining date: &nbsp;&nbsp;{{ attendance_stats.joining_date }}</a>
+            <a class="view-btn-right">Status: &nbsp;&nbsp;{{ attendance_stats.status }}</a>
+        </div>
+
+        <br>
+        <br>
+        <!-- Breakdown of Attendance -->
+        <div class="attendance-breakdown">
+            <div class="attendance-table">
+                <h2>Total Absents</h2>
+                <table>
+                    <tr>
+                        <th>Absent Date</th>
+                        <th>Fine</th>
+                        <th>Option</th>
+                    </tr>
+                    {% for date in attendance_stats.absent_dates %}
+                        <tr>
+                            <td>{{ date }}</td>
+                            <td>500</td>
+                            <td>
+                                <form method="post" action="{% url 'hide_detail' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" id="fine-amount" name="fine_amount" value=500>
+                                    <input type="hidden" id="name-pk" name="name_pk" value="{{ attendance_stats.name }}">
+                                    <input type="hidden" id="date-pk" name="date_pk" value="{{ date }}">
+                                    <center><button type="submit">Pay</button></center>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <div class="pagination">
+                    {% if attendance_stats.absent_dates.has_previous %}
+                        <a href="?absent_page={{ attendance_stats.absent_dates.previous_page_number }}">Previous</a>
+                    {% endif %}
+                    {% if not attendance_stats.absent_dates %}
+                        <span>No absent dates</span>
+                    {% else %}
+                        <span>Page {{ attendance_stats.absent_dates.number }} of {{ attendance_stats.absent_dates.paginator.num_pages }}</span>
+                    {% endif %}
+                    {% if attendance_stats.absent_dates.has_next %}
+                        <a href="?absent_page={{ attendance_stats.absent_dates.next_page_number }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="attendance-table">
+                <h2>Paid Fines</h2>
+                <table>
+                    <tr>
+                        <th>Fine Paid Date</th>
+                        <th>Amount</th>
+                    </tr>
+                    {% for teacher in attendance_stats.paid_fines %}
+                        <tr>
+                            <td>{{ teacher }}</td>
+                            <td>500</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <div class="pagination">
+                    {% if attendance_stats.paid_fines.has_previous %}
+                        <a href="?fine_paid_page={{ attendance_stats.paid_fines.previous_page_number }}">Previous</a>
+                    {% endif %}
+                    {% if not attendance_stats.paid_fines %}
+                        <span>No paid fines</span>
+                    {% else %}
+                        <span>Page {{ attendance_stats.paid_fines.number }} of {{ attendance_stats.paid_fines.paginator.num_pages }}</span>
+                    {% endif %}
+                    {% if attendance_stats.paid_fines.has_next %}
+                        <a href="?fine_paid_page={{ attendance_stats.paid_fines.next_page_number }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if request.user.is_superuser %}
+            <br>
+            <div class="button-container">
+                <h2 class="view-btn-left">{{ attendance_stats.role }} Attendance Report Generator</h2>
+            </div>
+            <br>
+            <form method="POST" action="">
+                {% csrf_token %}
+                <label for="email">Enter email to send the attendance report to {{ pk }}:</label>
+                <input type="email" name="email" required placeholder="example@example.com"
+                       style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                <button type="submit">Send</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <script>
+        // Function to close the popup modal
+        function closePopup() {
+            document.getElementById("popup-modal").style.display = "none";
+        }
+
+        // Show the popup if messages exist
+        {% if messages %}
+            document.getElementById("popup-modal").style.display = "block";
+        {% endif %}
+    </script>
+
+{% endblock content %}

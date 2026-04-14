@@ -1,0 +1,30 @@
+# Ignore .env files
+.env
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+.venv310/
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Celery
+celerybeat-schedule*
+
+# IDE
+.idea/
+
+# Logs / backups
+*.log
+*.bak
+*.dat
+*.dir
+
+# OS
+.DS_Store

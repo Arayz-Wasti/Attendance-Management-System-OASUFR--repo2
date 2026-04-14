@@ -1,0 +1,253 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block content %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <style>
+        /* Pop-up Modal Styling */
+        .popup-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 9999; /* Ensure it appears on top of everything */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .popup-modal.success {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+            color: #155724;
+        }
+
+        .popup-modal.error {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+
+        .popup-modal .popup-message {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .popup-modal .close-btn {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background-color: #1565C0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .popup-modal .close-btn:hover {
+            background-color: #1e88e5;
+        }
+
+        /* Fade in effect for the modal */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .flatpickr-input {
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 200px;
+        }
+
+        h1 {
+            font-family: 'Arial', sans-serif;
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: linear-gradient(to right, #1565C0, #1E88E5);
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        /* Animation for fade-in effect */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+
+    <div class="container">
+        <!-- Pop-up Modal for messages -->
+        {% if messages %}
+            <div id="popup-modal" class="popup-modal">
+                {% for message in messages %}
+                    <div class="popup-message">{{ message }}</div>
+                {% endfor %}
+                <button class="close-btn" onclick="closePopup()">Close</button>
+            </div>
+        {% endif %}
+
+        <h1>Total Attendance Logs</h1>
+
+        <!-- Search Form -->
+        <form method="GET" action=""
+              style="margin-bottom: 20px; text-align: center; display: flex; align-items: center; justify-content: center;">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search by Name or Role"
+                   style="padding: 10px; width: 300px; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; margin-right: 10px;">
+            <button type="submit" class="btn-back" style="margin-left: 20px;">Search</button>
+            <label for="date-picker" style="padding: 30px; font-size: 1.2rem; font-weight: bold; margin-right: 10px;">Select
+                Date: </label>
+            <input type="text" id="date-picker" name="date" value="{{ target_date|date:'Y-m-d' }}"
+                   class="flatpickr-input"
+                   style="font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; margin-right: 10px;">
+            <button type="button" class="btn-back" id="go-btn" style="margin-left: 1px;">Go</button>
+        </form>
+
+        <!-- Table of Attendance Logs -->
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Date</th>
+                <th>Timestamp</th>
+                <th>Attendance</th>
+                <th>Fine</th>
+                <th>Payment Method/Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for log in attendance_logs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ log.name }}</td>
+                    <td>{{ log.role }}</td>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.timestamp }}</td>
+                    <td>
+                        {% if not log.timestamp %}
+                            <span style="color: red; font-weight: bold;">Absent</span>
+                        {% else %}
+                            <span style="color: green; font-weight: bold;">Present</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.fine == 1 %}
+                            <span>0</span>
+                        {% else %}
+                            {{ log.fine }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not log.is_paid %}
+                            {% if log.fine == 1 %}
+                                <span style="color: orange; font-weight: bold;">Pending</span>
+                            {% else %}
+                            <span>
+                            <div style="display: flex; gap: 10px;">
+                                <form method="post" action="{% url 'hide_detail' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" id="fine-amount" name="fine_amount" value="{{ log.fine }}">
+                                    <input type="hidden" id="fine-id" name="fine_id" value="{{ log.id }}">
+                                    <input type="hidden" id="search-value" name="search_query"
+                                           value="{{ search_query }}">
+                                    <input type="hidden" id="date-value" name="date"
+                                           value="{{ target_date|date:'Y-m-d' }}">
+                                    <button type="submit">Stripe</button>
+                                </form>
+                                <form method="post" action="{% url 'logs' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" id="fine-amount" name="fine_amount" value="{{ log.fine }}">
+                                    <input type="hidden" id="fine-id" name="fine_id" value="{{ log.id }}">
+                                    <input type="hidden" id="search-value" name="search_query"
+                                           value="{{ search_query }}">
+                                    <input type="hidden" id="date-value" name="date"
+                                           value="{{ target_date|date:'Y-m-d' }}">
+                                    <button type="submit">Cash</button>
+                                </form>
+                            </div>
+                            </span>
+                            {% endif %}
+                        {% elif log.is_paid %}
+                            {% if not log.timestamp %}
+                                <span style="color: goldenrod; font-weight: bold;">Paid</span>
+                            {% else %}
+                                <span style="color: green; font-weight: bold;">Confirmed</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #888;">No attendance logs available because today
+                        is a holiday.
+                    </td>
+                </tr>
+            {% endfor %}
+            <br>
+            </tbody>
+        </table>
+
+        <a href="{% url 'dashboard' %}" class="btn-back">Back to Dashboard</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        // Initialize flatpickr for the date picker
+        flatpickr("#date-picker", {
+            dateFormat: "Y-m-d",  // Set date format
+            onChange: function (selectedDates, dateStr, instance) {
+                // We don't need to submit the form automatically, just store the new value
+                // The form will be submitted manually by the "Go" button click
+            }
+        });
+
+        // Handle the "Go" button click
+        document.getElementById("go-btn").addEventListener("click", function () {
+            // Get the selected date from the date picker
+            const selectedDate = document.getElementById("date-picker").value;
+            const searchQuery = document.querySelector('input[name="search"]').value;
+
+            // Update the window location with the new query string
+            window.location.href = `?day=${selectedDate}&search=${searchQuery}`;
+        });
+
+        // Function to close the popup modal
+        function closePopup() {
+            document.getElementById("popup-modal").style.display = "none";
+        }
+
+        // Show the popup if messages exist
+        {% if messages %}
+            document.getElementById("popup-modal").style.display = "block";
+        {% endif %}
+    </script>
+
+{% endblock %}
